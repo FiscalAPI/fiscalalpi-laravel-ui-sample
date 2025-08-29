@@ -2,17 +2,35 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PersonController;
 
+// Route::get('/', function () {
+//     return view('dashboard');
+// });
 
-// La ruta raíz retorna directamente el dashboard
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/profile', [HomeController::class, 'profile'])->name('profile');
+Route::resource('products', ProductController::class);
 
-// Rutas adicionales para el ejemplo
-Route::get('/settings', function () {
-    return view('settings');
-})->name('settings');
+// FiscalAPI Sync Routes
+Route::prefix('products')->group(function () {
+    Route::get('/sync/{fiscalApiId}', [ProductController::class, 'syncFromFiscalApi'])->name('products.sync');
+    Route::post('/sync-all', [ProductController::class, 'syncAllFromFiscalApi'])->name('products.sync-all');
+});
+Route::resource('people', PersonController::class);
+Route::get('/', [HomeController::class, 'index']);
+Route::get('/users', [HomeController::class, 'users']);
 
-Route::post('/logout', function () {
-    return redirect('/');
-})->name('logout');
+// POS Routes
+Route::prefix('pos')->group(function () {
+    Route::get('/', [App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
+    Route::post('/create-order', [App\Http\Controllers\PosController::class, 'createOrder'])->name('pos.create-order');
+    Route::get('/get-order-items/{orderId}', [App\Http\Controllers\PosController::class, 'getOrderItems'])->name('pos.get-order-items');
+    Route::post('/add-product', [App\Http\Controllers\PosController::class, 'addProduct'])->name('pos.add-product');
+    Route::post('/update-quantity', [App\Http\Controllers\PosController::class, 'updateQuantity'])->name('pos.update-quantity');
+    Route::post('/update-discount', [App\Http\Controllers\PosController::class, 'updateDiscount'])->name('pos.update-discount');
+    Route::post('/remove-product', [App\Http\Controllers\PosController::class, 'removeProduct'])->name('pos.remove-product');
+    Route::post('/update-order', [App\Http\Controllers\PosController::class, 'updateOrder'])->name('pos.update-order');
+    Route::post('/cancel-sale', [App\Http\Controllers\PosController::class, 'cancelSale'])->name('pos.cancel-sale');
+    Route::post('/end-sale', [App\Http\Controllers\PosController::class, 'endSale'])->name('pos.end-sale');
+    Route::get('/search-products', [App\Http\Controllers\PosController::class, 'searchProducts'])->name('pos.search-products');
+});

@@ -19,6 +19,35 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Share navigation items with all views
+        view()->composer('components.layout.sidebar-navigation', function ($view) {
+            $view->with('items', [
+                [
+                    'name' => 'Dashboard',
+                    'href' => '/',
+                    'icon' => 'dashboard',
+                    'active' => request()->is('/')
+                ],
+                [
+                    'name' => 'Punto de Venta',
+                    'href' => '/pos',
+                    'icon' => 'pos',
+                    'active' => request()->is('pos*')
+                ],
+                [
+                    'name' => 'Productos',
+                    'href' => '/products',
+                    'icon' => 'box',
+                    'active' => request()->is('products*')
+                ],
+                [
+                    'name' => 'Personas',
+                    'href' => '/people',
+                    'href' => '/people',
+                    'icon' => 'team',
+                    'active' => request()->is('people*')
+                ]
+            ]);
+        });
     }
 }

@@ -12,8 +12,8 @@ class HomeController extends Controller
         return view('dashboard');
     }
 
-    public function profile()
+    public function users()
     {
-        return view('profile');
+        return view('components.users.show');
     }
 }
