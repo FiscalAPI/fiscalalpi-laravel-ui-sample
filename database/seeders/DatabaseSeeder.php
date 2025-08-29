@@ -15,10 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
 
         // Seed SAT catalogs first
         $this->call([
@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             SatTaxRegimeCodeSeeder::class,
             SatCfdiUseCodeSeeder::class,
             ProductSeeder::class,
-            PersonSeeder::class,
+            //PersonSeeder::class,
         ]);
     }
 }
