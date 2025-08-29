@@ -30,7 +30,7 @@ class MobileSidebar extends Component
             ],
             [
                 'name' => 'Personas',
-                'href' => '/users',
+                'href' => '/people',
                 'active' => false,
                 'icon' => 'team'
             ],
