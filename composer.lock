@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d41ad155557274686d8758cf448479a7",
+    "content-hash": "a7681ad3046a4524d3f37d173251a2b2",
     "packages": [
         {
             "name": "brick/math",
@@ -508,6 +508,57 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "fiscalapi/fiscalapi",
+            "version": "4.0.270",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/FiscalAPI/fiscalapi-php.git",
+                "reference": "963cc3c14ea7f5ecf492daed4b7ad3bf97c1d4d4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/FiscalAPI/fiscalapi-php/zipball/963cc3c14ea7f5ecf492daed4b7ad3bf97c1d4d4",
+                "reference": "963cc3c14ea7f5ecf492daed4b7ad3bf97c1d4d4",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^7.0",
+                "php": ">=7.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Fiscalapi\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MPL-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "FISCAL API S DE R.L DE C.V",
+                    "homepage": "https://www.fiscalapi.com"
+                }
+            ],
+            "description": "SDK de PHP para FiscalAPI",
+            "homepage": "https://www.fiscalapi.com",
+            "keywords": [
+                "cfdi",
+                "factura",
+                "facturacion",
+                "fiscalapi",
+                "mexico",
+                "sat"
+            ],
+            "support": {
+                "issues": "https://github.com/FiscalAPI/fiscalapi-php/issues",
+                "source": "https://github.com/FiscalAPI/fiscalapi-php"
+            },
+            "time": "2025-08-25T23:05:36+00:00"
         },
         {
             "name": "fruitcake/php-cors",
