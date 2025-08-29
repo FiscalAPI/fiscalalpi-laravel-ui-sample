@@ -10,6 +10,12 @@ use App\Http\Controllers\PersonController;
 // });
 
 Route::resource('products', ProductController::class);
+
+// FiscalAPI Sync Routes
+Route::prefix('products')->group(function () {
+    Route::get('/sync/{fiscalApiId}', [ProductController::class, 'syncFromFiscalApi'])->name('products.sync');
+    Route::post('/sync-all', [ProductController::class, 'syncAllFromFiscalApi'])->name('products.sync-all');
+});
 Route::resource('people', PersonController::class);
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/users', [HomeController::class, 'users']);

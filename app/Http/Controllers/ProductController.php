@@ -8,9 +8,19 @@ use App\Models\SatTaxObjectCode;
 use App\Models\SatProductCode;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Services\FiscalApiProductService;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
+    protected $fiscalApiService;
+
+    public function __construct(FiscalApiProductService $fiscalApiService)
+    {
+        $this->fiscalApiService = $fiscalApiService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -46,8 +56,19 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        $product = Product::create($request->validated());
-        return redirect()->route('products.index')->with('success', 'Producto creado correctamente');
+        try {
+            $product = $this->fiscalApiService->createProduct($request->validated());
+            return redirect()->route('products.index')->with('success', 'Producto creado correctamente en ambos sistemas');
+        } catch (Exception $e) {
+            Log::error('Failed to create product', [
+                'error' => $e->getMessage(),
+                'data' => $request->validated()
+            ]);
+
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Error al crear el producto: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -86,16 +107,79 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
-        $product->update($request->validated());
-        return redirect()->route('products.index')->with('success', 'Producto actualizado correctamente');
+        try {
+            $product = $this->fiscalApiService->updateProduct($product, $request->validated());
+            return redirect()->route('products.index')->with('success', 'Producto actualizado correctamente en ambos sistemas');
+        } catch (Exception $e) {
+            Log::error('Failed to update product', [
+                'error' => $e->getMessage(),
+                'product_id' => $product->id,
+                'data' => $request->validated()
+            ]);
+
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Error al actualizar el producto: ' . $e->getMessage()]);
+        }
     }
 
-    /**
+        /**
      * Remove the specified resource from storage.
      */
     public function destroy(Product $product)
     {
-        $product->delete();
-        return redirect()->route('products.index')->with('success', 'Producto eliminado correctamente');
+        try {
+            $this->fiscalApiService->deleteProduct($product);
+            return redirect()->route('products.index')->with('success', 'Producto eliminado correctamente de ambos sistemas');
+        } catch (Exception $e) {
+            Log::error('Failed to delete product', [
+                'error' => $e->getMessage(),
+                'product_id' => $product->id
+            ]);
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Error al eliminar el producto: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Sync a specific product from FiscalAPI
+     */
+    public function syncFromFiscalApi(string $fiscalApiId)
+    {
+        try {
+            $product = $this->fiscalApiService->syncFromFiscalApi($fiscalApiId);
+
+            if ($product) {
+                return redirect()->route('products.index')->with('success', 'Producto sincronizado correctamente desde FiscalAPI');
+            } else {
+                return redirect()->route('products.index')->with('warning', 'No se pudo sincronizar el producto desde FiscalAPI');
+            }
+        } catch (Exception $e) {
+            Log::error('Failed to sync product from FiscalAPI', [
+                'error' => $e->getMessage(),
+                'fiscalapi_id' => $fiscalApiId
+            ]);
+
+            return redirect()->route('products.index')->with('error', 'Error al sincronizar el producto: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sync all products from FiscalAPI
+     */
+    public function syncAllFromFiscalApi()
+    {
+        try {
+            $syncedProducts = $this->fiscalApiService->syncAllFromFiscalApi();
+
+            return redirect()->route('products.index')->with('success', 'Sincronización completada. ' . count($syncedProducts) . ' productos sincronizados');
+        } catch (Exception $e) {
+            Log::error('Failed to sync all products from FiscalAPI', [
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('products.index')->with('error', 'Error al sincronizar productos: ' . $e->getMessage());
+        }
     }
 }
