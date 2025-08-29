@@ -254,3 +254,4 @@ El sistema POS está **completamente funcional** con todas las características 
 ---
 
 **Desarrollado con Laravel 11 y Tailwind CSS**
+php artisan people:sync-all-from-fiscalapi --page-size=1 --force
