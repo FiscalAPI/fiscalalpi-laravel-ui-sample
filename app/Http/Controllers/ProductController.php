@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\SatUnitMeasurementCode;
+use App\Models\SatTaxObjectCode;
+use App\Models\SatProductCode;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 
@@ -13,7 +16,12 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::all();
+        $products = Product::with([
+            'satUnitMeasurement',
+            'satTaxObject',
+            'satProductCode'
+        ])->get();
+
         return view('components.products.index', compact('products'));
     }
 
@@ -22,7 +30,15 @@ class ProductController extends Controller
      */
     public function create()
     {
-        return view('components.products.create');
+        $satUnitMeasurements = SatUnitMeasurementCode::all();
+        $satTaxObjects = SatTaxObjectCode::all();
+        $satProductCodes = SatProductCode::all();
+
+        return view('components.products.create', compact(
+            'satUnitMeasurements',
+            'satTaxObjects',
+            'satProductCodes'
+        ));
     }
 
     /**
@@ -39,6 +55,12 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        $product->load([
+            'satUnitMeasurement',
+            'satTaxObject',
+            'satProductCode'
+        ]);
+
         return view('components.products.show', compact('product'));
     }
 
@@ -47,7 +69,16 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        return view('components.products.edit', compact('product'));
+        $satUnitMeasurements = SatUnitMeasurementCode::all();
+        $satTaxObjects = SatTaxObjectCode::all();
+        $satProductCodes = SatProductCode::all();
+
+        return view('components.products.edit', compact(
+            'product',
+            'satUnitMeasurements',
+            'satTaxObjects',
+            'satProductCodes'
+        ));
     }
 
     /**

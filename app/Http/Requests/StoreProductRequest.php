@@ -22,10 +22,12 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'required|string|max:500',
             'unitPrice' => 'required|numeric|min:0',
             'fiscalapiId' => 'nullable|string|max:255',
+            'sat_unit_measurement_id' => 'required|string|exists:sat_unit_measurement_codes,code',
+            'sat_tax_object_id' => 'required|string|exists:sat_tax_object_codes,code',
+            'sat_product_code_id' => 'required|string|exists:sat_product_codes,code',
         ];
     }
 }
