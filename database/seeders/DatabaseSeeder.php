@@ -25,7 +25,10 @@ class DatabaseSeeder extends Seeder
             SatUnitMeasurementCodeSeeder::class,
             SatTaxObjectCodeSeeder::class,
             SatProductCodeSeeder::class,
+            SatTaxRegimeCodeSeeder::class,
+            SatCfdiUseCodeSeeder::class,
             ProductSeeder::class,
+            PersonSeeder::class,
         ]);
     }
 }
