@@ -24,13 +24,13 @@ class MobileSidebar extends Component
         return [
             [
                 'name' => 'Dashboard',
-                'href' => '#',
+                'href' => '/',
                 'active' => true,
                 'icon' => 'dashboard'
             ],
             [
                 'name' => 'Team',
-                'href' => '#',
+                'href' => '/users',
                 'active' => false,
                 'icon' => 'team'
             ],

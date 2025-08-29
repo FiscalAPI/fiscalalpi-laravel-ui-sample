@@ -23,16 +23,16 @@ class DesktopSidebar extends Component
     {
         return [
             [
-                'name' => 'Dashboard',
-                'href' => '#',
+                'name' => 'Inicio',
+                'href' => '/',
                 'active' => true,
                 'icon' => 'dashboard'
             ],
             [
-                'name' => 'Team',
-                'href' => '#',
+                'name' => 'Empresas',
+                'href' => '/users',
                 'active' => false,
-                'icon' => 'team'
+                'icon' => 'building-office2'
             ],
         ];
     }
