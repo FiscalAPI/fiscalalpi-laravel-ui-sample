@@ -29,10 +29,16 @@ class DesktopSidebar extends Component
                 'icon' => 'dashboard'
             ],
             [
-                'name' => 'Empresas',
+                'name' => 'Personas',
                 'href' => '/users',
                 'active' => false,
-                'icon' => 'building-office2'
+                'icon' => 'team'
+            ],
+            [
+                'name' => 'Productos',
+                'href' => '/products',
+                'active' => false,
+                'icon' => 'box'
             ],
         ];
     }

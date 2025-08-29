@@ -29,10 +29,16 @@ class MobileSidebar extends Component
                 'icon' => 'dashboard'
             ],
             [
-                'name' => 'Team',
+                'name' => 'Personas',
                 'href' => '/users',
                 'active' => false,
                 'icon' => 'team'
+            ],
+            [
+                'name' => 'Productos',
+                'href' => '/products',
+                'active' => false,
+                'icon' => 'box'
             ],
         ];
     }
