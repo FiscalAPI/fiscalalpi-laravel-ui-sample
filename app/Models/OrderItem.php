@@ -19,7 +19,13 @@ class OrderItem extends Model
         'subtotal',
     ];
 
+    protected $attributes = [
+        'discount_percentage' => 0,
+        'subtotal' => 0,
+    ];
+
     protected $casts = [
+        'quantity' => 'integer',
         'unit_price' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
         'subtotal' => 'decimal:2',

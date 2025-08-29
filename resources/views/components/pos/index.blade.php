@@ -62,7 +62,6 @@
                     <!-- Items will be populated by JavaScript -->
                 </div>
 
-
             </div>
 
             <!-- Right Panel - Sale Summary & Payment -->
@@ -93,17 +92,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // Product selection listener
     document.addEventListener('productSelected', handleProductSelected);
 
+    // Handle navigation away from POS
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+
     function initializePOS() {
         // Order is already created by the controller
         if (currentOrder) {
             console.log('Orden existente cargada:', currentOrder);
+            // Load existing order items from database
+            loadOrderItems();
             updateOrderSummary(currentOrder);
         }
     }
 
+    function loadOrderItems() {
+        if (!currentOrder) return;
 
+        fetch(`/pos/get-order-items/${currentOrder.id}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentOrderItems = data.items || [];
+                updateOrderItemsDisplay();
+                // Update order items status in order summary
+                if (window.updateOrderItemsStatus) {
+                    window.updateOrderItemsStatus(currentOrderItems.length > 0);
+                }
+                console.log('Items de orden cargados:', currentOrderItems);
+            } else {
+                console.error('Error al cargar items:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar items:', error);
+        });
+    }
 
-        function handleProductSelected(event) {
+    function handleProductSelected(event) {
         const product = event.detail.product;
         if (!currentOrder) {
             alert('Error: No hay una orden activa');
@@ -132,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 currentOrder = data.order;
+                // Update currentOrderItems with the fresh data from the response
                 currentOrderItems = data.order.items || [];
                 updateOrderSummary(currentOrder);
                 updateOrderItemsDisplay();
@@ -150,10 +182,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById('order-items');
         container.innerHTML = '';
 
+        if (currentOrderItems.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-gray-500">No hay productos en esta venta</div>';
+            // Update order items status in order summary
+            if (window.updateOrderItemsStatus) {
+                window.updateOrderItemsStatus(false);
+            }
+            return;
+        }
+
         currentOrderItems.forEach(item => {
             const itemElement = createOrderItemElement(item);
             container.appendChild(itemElement);
         });
+
+        // Update order items status in order summary
+        if (window.updateOrderItemsStatus) {
+            window.updateOrderItemsStatus(true);
+        }
     }
 
     function createOrderItemElement(item) {
@@ -165,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="font-medium text-gray-900">${item.product.description}</div>
                     <div class="text-sm text-gray-500">Stock: ${item.product.stock || 'N/A'}</div>
                 </div>
-                <div class="col-span-2 text-center text-gray-900">$${parseFloat(item.unitPrice).toFixed(2)}</div>
+                <div class="col-span-2 text-center text-gray-900">$${parseFloat(item.unit_price).toFixed(2)}</div>
                 <div class="col-span-2 text-center">
                     <input type="number" min="1" value="${item.quantity}"
                            class="w-16 text-center border-gray-300 rounded-md text-sm"
@@ -173,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
                            onchange="updateItemQuantity(${item.id}, this.value)">
                 </div>
                 <div class="col-span-2 text-center">
-                    <input type="number" min="0" max="100" step="0.01" value="${item.discountPercentage || 0}"
+                    <input type="number" min="0" max="100" step="0.01" value="${item.discount_percentage || 0}"
                            class="w-16 text-center border-gray-300 rounded-md text-sm"
                            data-item-id="${item.id}"
                            onchange="updateItemDiscount(${item.id}, this.value)">
@@ -195,6 +241,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function clearOrderItems() {
         document.getElementById('order-items').innerHTML = '';
+        // Update order items status in order summary
+        if (window.updateOrderItemsStatus) {
+            window.updateOrderItemsStatus(false);
+        }
     }
 
     function updateCompany() {
@@ -290,6 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Check if there are items in the current order
         if (currentOrderItems.length === 0) {
             alert('No se puede finalizar una venta sin productos');
             return;
@@ -329,6 +380,70 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error al finalizar la venta');
+            });
+        }
+    }
+
+    function createNewOrder() {
+        fetch('/pos/create-order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                issuerId: null,
+                recipientId: null
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentOrder = data.order;
+                currentOrderItems = [];
+                updateOrderItemsDisplay();
+                console.log('Nueva orden creada:', currentOrder);
+            } else {
+                console.error('Error al crear nueva orden:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error al crear nueva orden:', error);
+        });
+    }
+
+    // Handle navigation away from POS
+    function handleBeforeUnload(event) {
+        if (currentOrder && currentOrderItems.length > 0) {
+            event.preventDefault();
+            event.returnValue = 'Tienes una venta en progreso. ¿Estás seguro de que quieres salir?';
+            return event.returnValue;
+        }
+    }
+
+    function handlePageHide() {
+        if (currentOrder && currentOrderItems.length > 0) {
+            // Automatically cancel the sale if user navigates away
+            fetch('/pos/cancel-sale', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId: currentOrder.id
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Venta cancelada automáticamente al navegar');
+                }
+            })
+            .catch(error => {
+                console.error('Error al cancelar venta automáticamente:', error);
             });
         }
     }
@@ -404,6 +519,34 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error al actualizar cantidad');
+            });
+        } else if (field === 'discountPercentage') {
+            fetch('/pos/update-discount', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderItemId: itemId,
+                    discountPercentage: value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentOrder = data.order;
+                    currentOrderItems = data.order.items || [];
+                    updateOrderSummary(currentOrder);
+                    updateOrderItemsDisplay();
+                } else {
+                    alert('Error al actualizar descuento: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar descuento');
             });
         }
     }

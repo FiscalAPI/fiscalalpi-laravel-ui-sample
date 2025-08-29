@@ -22,9 +22,13 @@ class Order extends Model
         'due',
     ];
 
-    protected $nullable = [
-        'issuer_id',
-        'recipient_id',
+    protected $attributes = [
+        'status' => 'draft',
+        'subtotal' => 0,
+        'discounts' => 0,
+        'total' => 0,
+        'paid' => 0,
+        'due' => 0,
     ];
 
     protected $casts = [
@@ -65,11 +69,11 @@ class Order extends Model
     public function calculateTotals(): void
     {
         $subtotal = $this->items->sum(function ($item) {
-            return $item->quantity * $item->unitPrice;
+            return $item->quantity * $item->unit_price;
         });
 
         $discounts = $this->items->sum(function ($item) {
-            return ($item->quantity * $item->unitPrice * $item->discountPercentage) / 100;
+            return ($item->quantity * $item->unit_price * $item->discount_percentage) / 100;
         });
 
         $total = $subtotal - $discounts;

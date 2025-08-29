@@ -106,6 +106,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const paymentInputs = document.querySelectorAll('input[id$="-payment"]');
     const endSaleBtn = document.getElementById('end-sale-btn');
 
+    // Global variable to track if there are products in the order
+    window.hasOrderItems = false;
+
     // Update totals when payment amounts change
     paymentInputs.forEach(input => {
         input.addEventListener('input', updatePaymentTotals);
@@ -124,8 +127,28 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('order-paid').textContent = `$${totalPaid.toFixed(2)}`;
         document.getElementById('order-due').textContent = `$${due.toFixed(2)}`;
 
-        // Enable/disable end sale button
-        endSaleBtn.disabled = due > 0;
+        // Enable/disable end sale button based on payment and products
+        updateEndSaleButton(totalPaid, due);
+    }
+
+    function updateEndSaleButton(totalPaid, due) {
+        // Button is enabled when: there are products AND payment covers the total
+        const hasProducts = window.hasOrderItems;
+        const paymentComplete = due <= 0;
+        const hasTotal = parseFloat(document.getElementById('order-total').textContent.replace('$', '')) > 0;
+
+        endSaleBtn.disabled = !hasProducts || !paymentComplete || !hasTotal;
+
+        // Update button text based on state
+        if (!hasProducts) {
+            endSaleBtn.textContent = 'AGREGAR PRODUCTOS';
+        } else if (!hasTotal) {
+            endSaleBtn.textContent = 'SIN PRODUCTOS';
+        } else if (!paymentComplete) {
+            endSaleBtn.textContent = 'PAGO INCOMPLETO';
+        } else {
+            endSaleBtn.textContent = 'FINALIZAR VENTA';
+        }
     }
 
     // Function to update order summary from external data
@@ -141,11 +164,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Function to update order items status
+    window.updateOrderItemsStatus = function(hasItems) {
+        window.hasOrderItems = hasItems;
+        updatePaymentTotals();
+    };
+
     // Function to reset payment inputs
     window.resetPaymentInputs = function() {
         paymentInputs.forEach(input => {
             input.value = '';
         });
+        window.hasOrderItems = false;
         updatePaymentTotals();
     };
 });

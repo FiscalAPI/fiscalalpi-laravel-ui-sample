@@ -18,8 +18,10 @@ Route::get('/users', [HomeController::class, 'users']);
 Route::prefix('pos')->group(function () {
     Route::get('/', [App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
     Route::post('/create-order', [App\Http\Controllers\PosController::class, 'createOrder'])->name('pos.create-order');
+    Route::get('/get-order-items/{orderId}', [App\Http\Controllers\PosController::class, 'getOrderItems'])->name('pos.get-order-items');
     Route::post('/add-product', [App\Http\Controllers\PosController::class, 'addProduct'])->name('pos.add-product');
     Route::post('/update-quantity', [App\Http\Controllers\PosController::class, 'updateQuantity'])->name('pos.update-quantity');
+    Route::post('/update-discount', [App\Http\Controllers\PosController::class, 'updateDiscount'])->name('pos.update-discount');
     Route::post('/remove-product', [App\Http\Controllers\PosController::class, 'removeProduct'])->name('pos.remove-product');
     Route::post('/update-order', [App\Http\Controllers\PosController::class, 'updateOrder'])->name('pos.update-order');
     Route::post('/cancel-sale', [App\Http\Controllers\PosController::class, 'cancelSale'])->name('pos.cancel-sale');

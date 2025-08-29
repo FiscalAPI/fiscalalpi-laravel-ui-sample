@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 
 class PosController extends Controller
 {
-        /**
+    /**
      * Display the POS interface.
      */
     public function index()
@@ -35,13 +35,13 @@ class PosController extends Controller
     public function createOrder(Request $request): JsonResponse
     {
         $request->validate([
-            'issuerId' => 'required|exists:people,id',
-            'recipientId' => 'required|exists:people,id',
+            'issuerId' => 'nullable|exists:people,id',
+            'recipientId' => 'nullable|exists:people,id',
         ]);
 
         $order = Order::create([
-            'issuerId' => $request->issuerId,
-            'recipientId' => $request->recipientId,
+            'issuer_id' => $request->issuerId,
+            'recipient_id' => $request->recipientId,
             'status' => 'draft',
         ]);
 
@@ -49,6 +49,20 @@ class PosController extends Controller
             'success' => true,
             'order' => $order,
             'message' => 'Orden creada correctamente'
+        ]);
+    }
+
+    /**
+     * Get order items for a specific order.
+     */
+    public function getOrderItems($orderId): JsonResponse
+    {
+        $order = Order::with('items.product')->findOrFail($orderId);
+
+        return response()->json([
+            'success' => true,
+            'items' => $order->items,
+            'message' => 'Items de orden obtenidos correctamente'
         ]);
     }
 
@@ -65,24 +79,26 @@ class PosController extends Controller
         ]);
 
         $product = Product::findOrFail($request->productId);
+        $discountPercentage = $request->discountPercentage ?? 0;
+        $subtotal = $request->quantity * $product->unitPrice * (1 - $discountPercentage / 100);
 
         $orderItem = OrderItem::create([
             'order_id' => $request->orderId,
             'product_id' => $request->productId,
             'quantity' => $request->quantity,
             'unit_price' => $product->unitPrice,
-            'discount_percentage' => $request->discountPercentage ?? 0,
-            'subtotal' => $request->quantity * $product->unitPrice * (1 - ($request->discountPercentage ?? 0) / 100),
+            'discount_percentage' => $discountPercentage,
+            'subtotal' => $subtotal,
         ]);
 
         // Recalculate order totals
-        $order = Order::findOrFail($request->orderId);
+        $order = Order::with('items.product')->findOrFail($request->orderId);
         $order->calculateTotals();
 
         return response()->json([
             'success' => true,
             'orderItem' => $orderItem->load('product'),
-            'order' => $order->fresh(),
+            'order' => $order->fresh(['items.product']),
             'message' => 'Producto agregado correctamente'
         ]);
     }
@@ -108,8 +124,34 @@ class PosController extends Controller
         return response()->json([
             'success' => true,
             'orderItem' => $orderItem->fresh(),
-            'order' => $order->fresh(),
+            'order' => $order->fresh(['items.product']),
             'message' => 'Cantidad actualizada correctamente'
+        ]);
+    }
+
+    /**
+     * Update order item discount.
+     */
+    public function updateDiscount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'orderItemId' => 'required|exists:order_items,id',
+            'discountPercentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $orderItem = OrderItem::findOrFail($request->orderItemId);
+        $orderItem->update(['discount_percentage' => $request->discountPercentage]);
+        $orderItem->calculateSubtotal();
+
+        // Recalculate order totals
+        $order = $orderItem->order;
+        $order->calculateTotals();
+
+        return response()->json([
+            'success' => true,
+            'orderItem' => $orderItem->fresh(),
+            'order' => $order->fresh(['items.product']),
+            'message' => 'Descuento actualizado correctamente'
         ]);
     }
 
@@ -130,7 +172,7 @@ class PosController extends Controller
 
         return response()->json([
             'success' => true,
-            'order' => $order->fresh(),
+            'order' => $order->fresh(['items.product']),
             'message' => 'Producto removido correctamente'
         ]);
     }
@@ -149,11 +191,11 @@ class PosController extends Controller
         $order = Order::findOrFail($request->orderId);
 
         if ($request->has('issuerId')) {
-            $order->update(['issuerId' => $request->issuerId]);
+            $order->update(['issuer_id' => $request->issuerId]);
         }
 
         if ($request->has('recipientId')) {
-            $order->update(['recipientId' => $request->recipientId]);
+            $order->update(['recipient_id' => $request->recipientId]);
         }
 
         return response()->json([
