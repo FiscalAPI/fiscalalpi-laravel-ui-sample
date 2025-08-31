@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PersonController;
+use App\Http\Controllers\SalesController;
 
 // Route::get('/', function () {
 //     return view('dashboard');
@@ -19,6 +20,13 @@ Route::prefix('products')->group(function () {
 Route::resource('people', PersonController::class);
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/users', [HomeController::class, 'users']);
+
+// Sales Routes
+Route::prefix('sales')->group(function () {
+    Route::get('/', [SalesController::class, 'index'])->name('sales.index');
+    Route::post('/{order}/generate-invoice', [SalesController::class, 'generateInvoice'])->name('sales.generate-invoice');
+    Route::get('/invoice/{invoiceId}/pdf', [SalesController::class, 'getInvoicePdf'])->name('sales.invoice-pdf');
+});
 
 // POS Routes
 Route::prefix('pos')->group(function () {
