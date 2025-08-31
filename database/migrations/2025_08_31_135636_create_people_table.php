@@ -6,8 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
+   /**
      * Run the migrations.
+     *
+     * Creates the 'people' table which stores entities and indidviduals information,
+     * including fiscal details.
      */
     public function up(): void
     {
@@ -20,9 +23,9 @@ return new class extends Migration
             $table->string('capitalRegime')->nullable();
             $table->string('satTaxRegimeId')->nullable();
             $table->string('satCfdiUseId')->nullable();
-            $table->string('tin')->nullable();
+            $table->string('tin')->nullable(); // Tax Identification Number (RFC in Mexico)
             $table->string('zipCode')->nullable();
-            $table->string('taxPassword')->nullable();
+            $table->string('taxPassword')->nullable(); // CIEC/Contraseña del SAT
             $table->timestamps();
 
             // Foreign key constraints
@@ -33,6 +36,8 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * Drops the 'people' table.
      */
     public function down(): void
     {

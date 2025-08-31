@@ -195,7 +195,13 @@ class SyncAllPeopleFromFiscalApi extends Command
     protected function syncPersonFromFiscalApi(array $fiscalApiPerson): string
     {
         $fiscalApiId = $fiscalApiPerson['id'];
+        Log::info('FiscalAPI ID: ' . $fiscalApiId);
+        Log::info('FiscalAPI Person: ' . json_encode($fiscalApiPerson));
 
+        //if id length is difernet that 36, then skip it.
+        if (strlen($fiscalApiId) !== 36) {
+            return 'skipped';
+        }
         // Buscar si la persona ya existe localmente
         $existingPerson = Person::where('fiscalapiId', $fiscalApiId)->first();
 

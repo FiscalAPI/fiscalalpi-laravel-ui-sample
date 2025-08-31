@@ -29,12 +29,6 @@ class AppServiceProvider extends ServiceProvider
                     'active' => request()->is('/')
                 ],
                 [
-                    'name' => 'Punto de Venta',
-                    'href' => '/pos',
-                    'icon' => 'pos',
-                    'active' => request()->is('pos*')
-                ],
-                [
                     'name' => 'Productos',
                     'href' => '/products',
                     'icon' => 'box',
@@ -43,10 +37,15 @@ class AppServiceProvider extends ServiceProvider
                 [
                     'name' => 'Personas',
                     'href' => '/people',
-                    'href' => '/people',
                     'icon' => 'team',
                     'active' => request()->is('people*')
-                ]
+                ],
+                [
+                    'name' => 'Punto de Venta',
+                    'href' => '/pos',
+                    'icon' => 'pos',
+                    'active' => request()->is('pos*')
+                ],
             ]);
         });
     }
