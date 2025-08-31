@@ -19,6 +19,14 @@ class FiscalApiInvoiceService
     }
 
     /**
+     * Get the FiscalAPI client instance
+     */
+    public function getFiscalApiClient(): FiscalApiClient
+    {
+        return $this->fiscalApi;
+    }
+
+    /**
      * Generate invoice for an order using FiscalAPI
      */
     public function generateInvoice(Order $order): array
@@ -105,38 +113,11 @@ class FiscalApiInvoiceService
                 return null;
             }
 
-            // Obtener PDF desde FiscalAPI
-            $pdfRequest = ['invoiceId' => $invoiceId];
-            $apiResponse = $this->fiscalApi->getInvoiceService()->getPdf($pdfRequest);
-            $responseData = $apiResponse->getJson();
-
-            if (!$responseData['succeeded']) {
-                Log::error('Failed to get PDF from FiscalAPI', [
-                    'invoice_id' => $invoiceId,
-                    'response' => $responseData
-                ]);
-                return null;
-            }
-
-            // Convertir base64 a archivo temporal y retornar URL
-            $base64File = $responseData['data']['base64File'];
-            $fileName = $responseData['data']['fileName'] ?? 'invoice.pdf';
-
-            // Crear archivo temporal
-            $tempPath = storage_path('app/temp/' . $fileName);
-            $tempDir = dirname($tempPath);
-
-            if (!is_dir($tempDir)) {
-                mkdir($tempDir, 0755, true);
-            }
-
-            file_put_contents($tempPath, base64_decode($base64File));
-
-            // Retornar URL temporal (en producción, esto debería ser una ruta real)
-            return route('sales.invoice-pdf', ['invoiceId' => $invoiceId]);
+            // Retornar la URL de descarga del PDF
+            return route('sales.invoice-download-pdf', ['invoiceId' => $invoiceId]);
 
         } catch (Exception $e) {
-            Log::error('Exception while getting PDF', [
+            Log::error('Exception while getting PDF URL', [
                 'invoice_id' => $invoiceId,
                 'error' => $e->getMessage()
             ]);

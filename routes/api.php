@@ -31,7 +31,7 @@ Route::prefix('orders')->group(function () {
 });
 
 Route::prefix('invoices')->group(function () {
-    Route::get('/{invoiceId}/pdf', [SalesController::class, 'getInvoicePdf']);
+    Route::get('/{invoiceId}/pdf', [SalesController::class, 'getInvoicePdfInfo']);
     Route::get('/{invoiceId}/xml', [SalesController::class, 'getInvoiceXml']);
     Route::post('/{invoiceId}/send-email', [SalesController::class, 'sendInvoiceByEmail']);
     Route::get('/{invoiceId}/download-pdf', [SalesController::class, 'downloadInvoicePdf']);

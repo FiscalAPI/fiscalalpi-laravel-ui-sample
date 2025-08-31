@@ -113,18 +113,6 @@
                                             </svg>
                                         </button>
 
-                                        <!-- Botón Descargar PDF -->
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center px-2 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                            onclick="downloadInvoicePdf('{{ $order->invoice_id }}')"
-                                            title="Descargar PDF"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                        </button>
-
                                         <!-- Botón Descargar XML -->
                                         <button
                                             type="button"
@@ -260,21 +248,12 @@ function viewInvoicePdf(invoiceId) {
         return;
     }
 
-    // Abrir el PDF en una nueva pestaña
-    const pdfUrl = `/api/invoices/${invoiceId}/pdf`;
+    // Abrir el PDF en una nueva pestaña usando la ruta web que sirve el PDF directamente
+    const pdfUrl = `/sales/invoice/${invoiceId}/pdf`;
     window.open(pdfUrl, '_blank');
 }
 
-function downloadInvoicePdf(invoiceId) {
-    if (!invoiceId) {
-        showNotification('No hay factura disponible para esta venta.', 'error');
-        return;
-    }
 
-    // Descargar el PDF
-    const downloadUrl = `/sales/invoice/${invoiceId}/download-pdf`;
-    window.open(downloadUrl, '_blank');
-}
 
 function downloadInvoiceXml(invoiceId) {
     if (!invoiceId) {

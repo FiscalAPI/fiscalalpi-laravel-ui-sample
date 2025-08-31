@@ -179,9 +179,51 @@ class SalesController extends Controller
     }
 
     /**
-     * Get PDF for an invoice
+     * Get PDF for an invoice (serves PDF directly)
      */
-    public function getInvoicePdf(string $invoiceId): JsonResponse
+    public function getInvoicePdf(string $invoiceId)
+    {
+        try {
+            // Verificar que la factura existe
+            if (!$this->fiscalApiService->validateInvoice($invoiceId)) {
+                abort(400, 'ID de factura inválido');
+            }
+
+            // Obtener el PDF desde FiscalAPI
+            $pdfRequest = ['invoiceId' => $invoiceId];
+            $apiResponse = $this->fiscalApiService->getFiscalApiClient()->getInvoiceService()->getPdf($pdfRequest);
+            $responseData = $apiResponse->getJson();
+
+            if (!$responseData['succeeded']) {
+                Log::error('Failed to get PDF from FiscalAPI', [
+                    'invoice_id' => $invoiceId,
+                    'response' => $responseData
+                ]);
+                abort(404, 'No se pudo obtener el PDF de la factura');
+            }
+
+            // Convertir base64 a archivo y servir
+            $pdfContent = base64_decode($responseData['data']['base64File']);
+            $fileName = $responseData['data']['fileName'] ?? 'invoice.pdf';
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $fileName . '"');
+
+        } catch (\Exception $e) {
+            Log::error('Exception while getting PDF', [
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage()
+            ]);
+
+            abort(500, 'Error al obtener el PDF');
+        }
+    }
+
+    /**
+     * Get PDF info for an invoice (returns JSON with PDF URL)
+     */
+    public function getInvoicePdfInfo(string $invoiceId): JsonResponse
     {
         try {
             // Verificar que la factura existe
@@ -207,7 +249,7 @@ class SalesController extends Controller
                 'pdf_url' => $pdfUrl
             ]);
         } catch (\Exception $e) {
-            Log::error('Exception while getting PDF', [
+            Log::error('Exception while getting PDF info', [
                 'invoice_id' => $invoiceId,
                 'error' => $e->getMessage()
             ]);
