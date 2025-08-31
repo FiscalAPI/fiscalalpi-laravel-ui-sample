@@ -14,11 +14,7 @@
                 </div>
 
                 <div class="relative flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 ring-1 ring-white/10">
-                    <div class="relative flex h-16 shrink-0 items-center">
-                        <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500" alt="Your Company" class="h-8 w-auto" />
-                    </div>
-
-                    <x-layout.sidebar-navigation :items="$navigationItems" />
+                    <x-layout.sidebar-base :navigationItems="$navigationItems" />
                 </div>
             </el-dialog-panel>
         </div>

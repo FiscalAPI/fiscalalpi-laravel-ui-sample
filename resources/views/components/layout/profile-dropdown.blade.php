@@ -11,7 +11,13 @@
         </span>
     </button>
     <el-menu anchor="bottom end" popover class="w-32 origin-top-right rounded-md bg-white py-2 shadow-lg outline outline-gray-900/5 transition transition-discrete [--anchor-gap:--spacing(2.5)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
-        <a href="#" class="block px-3 py-1 text-sm/6 text-gray-900 focus:bg-gray-50 focus:outline-hidden">Your profile</a>
-        <a href="#" class="block px-3 py-1 text-sm/6 text-gray-900 focus:bg-gray-50 focus:outline-hidden">Sign out</a>
+        @foreach($menuItems as $item)
+            <a href="{{ $item['href'] }}" class="block px-3 py-1 text-sm/6 text-gray-900 focus:bg-gray-50 focus:outline-hidden">
+                @if($item['icon'])
+                    {!! $item['icon'] !!}
+                @endif
+                {{ $item['label'] }}
+            </a>
+        @endforeach
     </el-menu>
 </el-dropdown>

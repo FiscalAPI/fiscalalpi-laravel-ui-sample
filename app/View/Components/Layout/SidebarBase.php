@@ -7,21 +7,20 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class SidebarNavigation extends Component
+class SidebarBase extends Component
 {
     use HasNavigation;
 
     public function __construct(
-        public array $items = []
+        public array $navigationItems = []
     ) {
-        $this->items = $items ?: $this->getNavigationItems();
+        $this->navigationItems = $navigationItems ?: $this->getNavigationItems();
     }
 
     public function render(): View|Closure|string
     {
-        return view('components.layout.sidebar-navigation', [
-            'items' => $this->items,
-            'navigationService' => $this->getNavigationService()
+        return view('components.layout.sidebar-base', [
+            'branding' => $this->getBranding()
         ]);
     }
 }
