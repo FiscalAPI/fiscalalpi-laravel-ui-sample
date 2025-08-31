@@ -1,3 +1,7 @@
+@php
+use App\Models\Order;
+@endphp
+
 <x-layout.app-layout title="Ventas">
     <x-layout.main-content
         title="Ventas"
@@ -24,10 +28,10 @@
                         name="status"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     >
-                        <option value="completed" {{ request('status', 'completed') === 'completed' ? 'selected' : '' }}>Completada</option>
-                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Borrador</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pendiente</option>
-                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelada</option>
+                        <option value="{{ Order::STATUS_COMPLETED }}" {{ request('status', Order::STATUS_COMPLETED) === Order::STATUS_COMPLETED ? 'selected' : '' }}>Completada</option>
+                        <option value="{{ Order::STATUS_INVOICED }}" {{ request('status') === Order::STATUS_INVOICED ? 'selected' : '' }}>Facturada</option>
+                        <option value="{{ Order::STATUS_DRAFT }}" {{ request('status') === Order::STATUS_DRAFT ? 'selected' : '' }}>Borrador</option>
+                        <option value="{{ Order::STATUS_CANCELLED }}" {{ request('status') === Order::STATUS_CANCELLED ? 'selected' : '' }}>Cancelada</option>
                     </select>
                 </div>
                 <div class="sm:w-48">
@@ -69,7 +73,7 @@
         </form>
 
         <!-- Indicador de filtros activos -->
-        @if(request('search') || request('status') !== 'completed' || request('date_range'))
+        @if(request('search') || request('status') !== Order::STATUS_COMPLETED || request('date_range'))
             <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
@@ -83,7 +87,7 @@
                                     Búsqueda: "{{ request('search') }}"
                                 </span>
                             @endif
-                            @if(request('status') !== 'completed')
+                            @if(request('status') !== Order::STATUS_COMPLETED)
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     Estado: {{ ucfirst(request('status')) }}
                                 </span>
@@ -110,13 +114,13 @@
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No se encontraron ventas</h3>
                 <p class="text-gray-500 mb-4">
-                    @if(request('search') || request('status') !== 'completed' || request('date_range'))
+                    @if(request('search') || request('status') !== Order::STATUS_COMPLETED || request('date_range'))
                         No hay ventas que coincidan con los filtros aplicados.
                     @else
                         No hay ventas completadas disponibles para facturar.
                     @endif
                 </p>
-                @if(request('search') || request('status') !== 'completed' || request('date_range'))
+                @if(request('search') || request('status') !== Order::STATUS_COMPLETED || request('date_range'))
                     <a
                         href="{{ route('sales.index') }}"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

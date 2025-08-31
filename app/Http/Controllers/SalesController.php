@@ -26,9 +26,9 @@ class SalesController extends Controller
         $query = Order::with(['recipient', 'issuer', 'items.product'])
             ->orderBy('created_at', 'desc');
 
-        // Filtro por defecto: mostrar solo órdenes completadas (facturables)
-        $defaultStatus = $request->get('status', 'completed');
-        $query->where('status', $defaultStatus);
+        // Aplicar filtro por status
+        $status = $request->get('status', Order::STATUS_COMPLETED);
+        $query->where('status', $status);
 
         // Aplicar filtros adicionales
         if ($request->filled('search')) {
@@ -40,11 +40,6 @@ class SalesController extends Controller
                         ->orWhere('tin', 'like', "%{$search}%");
                   });
             });
-        }
-
-        // Permitir cambiar el estado si se especifica explícitamente
-        if ($request->filled('status') && $request->status !== 'completed') {
-            $query->where('status', $request->status);
         }
 
         if ($request->filled('date_range')) {
@@ -74,7 +69,7 @@ class SalesController extends Controller
             }
 
             // Verificar que la orden esté completada
-            if ($order->status !== 'completed') {
+            if ($order->status !== Order::STATUS_COMPLETED) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Solo se pueden facturar órdenes completadas'
@@ -134,16 +129,18 @@ class SalesController extends Controller
             $result = $this->fiscalApiService->generateInvoice($order);
 
             if ($result['success']) {
-                // Actualizar la orden con el ID de la factura
+                // Actualizar la orden con el ID de la factura y cambiar status a 'invoiced'
                 $order->update([
-                    'invoice_id' => $result['invoice_id']
+                    'invoice_id' => $result['invoice_id'],
+                    'status' => Order::STATUS_INVOICED
                 ]);
 
                 Log::info('Invoice generated successfully', [
                     'order_id' => $order->id,
                     'invoice_id' => $result['invoice_id'],
                     'invoice_uuid' => $result['invoice_uuid'] ?? null,
-                    'invoice_number' => $result['invoice_number'] ?? null
+                    'invoice_number' => $result['invoice_number'] ?? null,
+                    'new_status' => Order::STATUS_INVOICED
                 ]);
 
                 return response()->json([

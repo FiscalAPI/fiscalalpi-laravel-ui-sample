@@ -2,6 +2,10 @@
     'orders' => collect()
 ])
 
+@php
+use App\Models\Order;
+@endphp
+
 <div {{ $attributes->merge(['class' => 'bg-white shadow-sm rounded-lg border border-gray-200']) }}>
     <!-- Header -->
     <div class="px-6 py-4 border-b border-gray-200">
@@ -73,11 +77,8 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $order->status === 'completed' ? 'bg-green-100 text-green-800' :
-                                   ($order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                   'bg-gray-100 text-gray-800') }}">
-                                {{ ucfirst($order->status) }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $order->getStatusBadgeClasses() }}">
+                                {{ $order->getStatusDisplayText() }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -85,7 +86,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center space-x-2">
-                                @if(!$order->invoice_id)
+                                @if($order->status === Order::STATUS_COMPLETED && !$order->invoice_id)
                                     <!-- Botón Facturar -->
                                     <button
                                         type="button"
@@ -97,8 +98,8 @@
                                         </svg>
                                         Facturar
                                     </button>
-                                @else
-                                    <!-- Botones para facturas existentes -->
+                                @elseif($order->status === Order::STATUS_INVOICED && $order->invoice_id)
+                                    <!-- Botones para facturas facturadas -->
                                     <div class="flex items-center space-x-1">
                                         <!-- Botón Ver PDF -->
                                         <button
@@ -137,6 +138,32 @@
                                             </svg>
                                         </button>
                                     </div>
+                                @elseif($order->invoice_id && $order->status !== Order::STATUS_INVOICED)
+                                    <!-- Caso especial: tiene invoice_id pero status no es 'invoiced' (factura pendiente de procesar) -->
+                                    <div class="flex items-center space-x-1">
+                                        <span class="text-xs text-gray-500">Procesando factura...</span>
+                                        <!-- Botón Ver PDF (si está disponible) -->
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center px-2 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                            onclick="viewInvoicePdf('{{ $order->invoice_id }}')"
+                                            title="Ver PDF"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                @elseif($order->status === Order::STATUS_DRAFT)
+                                    <!-- Orden en borrador -->
+                                    <span class="text-xs text-gray-500">Orden en borrador</span>
+                                @elseif($order->status === Order::STATUS_CANCELLED)
+                                    <!-- Orden cancelada -->
+                                    <span class="text-xs text-red-500">Orden cancelada</span>
+                                @else
+                                    <!-- Estado no manejado -->
+                                    <span class="text-xs text-gray-500">Estado: {{ $order->status }}</span>
                                 @endif
                             </div>
                         </td>
