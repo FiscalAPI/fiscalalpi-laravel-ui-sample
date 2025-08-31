@@ -43,6 +43,12 @@ return [
                 'icon' => 'pos',
                 'permission' => null,
             ],
+            [
+                'name' => 'Ventas',
+                'href' => '/sales',
+                'icon' => 'sales',
+                'permission' => null,
+            ],
         ],
     ],
 

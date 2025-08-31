@@ -20,6 +20,7 @@ class Order extends Model
         'total',
         'paid',
         'due',
+        'invoice_id',
     ];
 
     protected $attributes = [
@@ -29,6 +30,7 @@ class Order extends Model
         'total' => 0,
         'paid' => 0,
         'due' => 0,
+        'invoice_id' => null,
     ];
 
     protected $casts = [
@@ -37,6 +39,7 @@ class Order extends Model
         'total' => 'decimal:2',
         'paid' => 'decimal:2',
         'due' => 'decimal:2',
+        'invoice_id' => 'string',
     ];
 
     /**
