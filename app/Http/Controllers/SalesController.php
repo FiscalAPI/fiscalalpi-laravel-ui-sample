@@ -7,6 +7,7 @@ use App\Services\FiscalApiInvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 class SalesController extends Controller
 {
@@ -22,7 +23,7 @@ class SalesController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Order::with(['recipient', 'issuer'])
+        $query = Order::with(['recipient', 'issuer', 'items.product'])
             ->orderBy('created_at', 'desc');
 
         // Filtro por defecto: mostrar solo órdenes completadas (facturables)
@@ -58,9 +59,12 @@ class SalesController extends Controller
     /**
      * Generate invoice for an order
      */
-    public function generateInvoice(Request $request, Order $order): JsonResponse
+    public function generateInvoice(Request $request, $id): JsonResponse
     {
         try {
+            // Buscar la orden por ID con todas las relaciones necesarias
+            $order = Order::with(['recipient', 'issuer', 'items.product'])->findOrFail($id);
+
             // Verificar que la orden no tenga factura ya
             if ($order->invoice_id) {
                 return response()->json([
@@ -69,28 +73,104 @@ class SalesController extends Controller
                 ], 400);
             }
 
+            // Verificar que la orden esté completada
+            if ($order->status !== 'completed') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se pueden facturar órdenes completadas'
+                ], 400);
+            }
+
+            // Verificar que la orden tenga items
+            if ($order->items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La orden no tiene productos para facturar'
+                ], 400);
+            }
+
+            // Verificar que tenga emisor y receptor
+            if (!$order->issuer || !$order->recipient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La orden debe tener un emisor y receptor asignados'
+                ], 400);
+            }
+
+            // Verificar que el emisor tenga ID de FiscalAPI
+            if (!$order->issuer->fiscalapiId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El emisor no tiene un ID de FiscalAPI válido'
+                ], 400);
+            }
+
+            // Verificar que el receptor tenga ID de FiscalAPI
+            if (!$order->recipient->fiscalapiId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El receptor no tiene un ID de FiscalAPI válido'
+                ], 400);
+            }
+
+            // Verificar que todos los productos tengan ID de FiscalAPI
+            foreach ($order->items as $item) {
+                if (!$item->product || !$item->product->fiscalapiId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El producto "' . ($item->product?->description ?? 'N/A') . '" no tiene un ID de FiscalAPI válido'
+                    ], 400);
+                }
+            }
+
+            Log::info('Starting invoice generation', [
+                'order_id' => $order->id,
+                'issuer_id' => $order->issuer->id,
+                'recipient_id' => $order->recipient->id,
+                'items_count' => $order->items->count()
+            ]);
+
             // Generar la factura usando FiscalAPI
             $result = $this->fiscalApiService->generateInvoice($order);
 
             if ($result['success']) {
                 // Actualizar la orden con el ID de la factura
                 $order->update([
+                    'invoice_id' => $result['invoice_id']
+                ]);
+
+                Log::info('Invoice generated successfully', [
+                    'order_id' => $order->id,
                     'invoice_id' => $result['invoice_id'],
-                    'status' => 'completed'
+                    'invoice_uuid' => $result['invoice_uuid'] ?? null,
+                    'invoice_number' => $result['invoice_number'] ?? null
                 ]);
 
                 return response()->json([
                     'success' => true,
                     'message' => 'Factura generada exitosamente',
-                    'invoice_id' => $result['invoice_id']
+                    'invoice_id' => $result['invoice_id'],
+                    'invoice_uuid' => $result['invoice_uuid'] ?? null,
+                    'invoice_number' => $result['invoice_number'] ?? null
                 ]);
             } else {
+                Log::error('Failed to generate invoice', [
+                    'order_id' => $order->id,
+                    'error' => $result['message']
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => $result['message']
                 ], 500);
             }
         } catch (\Exception $e) {
+            Log::error('Exception while generating invoice', [
+                'order_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error interno del servidor: ' . $e->getMessage()
@@ -127,10 +207,149 @@ class SalesController extends Controller
                 'pdf_url' => $pdfUrl
             ]);
         } catch (\Exception $e) {
+            Log::error('Exception while getting PDF', [
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener el PDF: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Get XML for an invoice
+     */
+    public function getInvoiceXml(string $invoiceId): JsonResponse
+    {
+        try {
+            // Verificar que la factura existe
+            if (!$this->fiscalApiService->validateInvoice($invoiceId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID de factura inválido'
+                ], 400);
+            }
+
+            // Obtener el XML de la factura
+            $xmlData = $this->fiscalApiService->getInvoiceXml($invoiceId);
+
+            if (!$xmlData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo obtener el XML de la factura'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'xml_data' => $xmlData
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Exception while getting XML', [
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el XML: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send invoice by email
+     */
+    public function sendInvoiceByEmail(Request $request, string $invoiceId): JsonResponse
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email'
+            ]);
+
+            // Verificar que la factura existe
+            if (!$this->fiscalApiService->validateInvoice($invoiceId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID de factura inválido'
+                ], 400);
+            }
+
+            // Enviar la factura por correo
+            $result = $this->fiscalApiService->sendInvoiceByEmail($invoiceId, $request->email);
+
+            if ($result['success']) {
+                Log::info('Invoice sent by email successfully', [
+                    'invoice_id' => $invoiceId,
+                    'email' => $request->email
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $result['message']
+                ]);
+            } else {
+                Log::error('Failed to send invoice by email', [
+                    'invoice_id' => $invoiceId,
+                    'email' => $request->email,
+                    'error' => $result['message']
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message']
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception while sending invoice by email', [
+                'invoice_id' => $invoiceId,
+                'email' => $request->email ?? 'not provided',
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download invoice PDF
+     */
+    public function downloadInvoicePdf(string $invoiceId)
+    {
+        try {
+            // Verificar que la factura existe
+            if (!$this->fiscalApiService->validateInvoice($invoiceId)) {
+                abort(400, 'ID de factura inválido');
+            }
+
+            // Obtener el XML de la factura (que incluye el PDF en base64)
+            $xmlData = $this->fiscalApiService->getInvoiceXml($invoiceId);
+
+            if (!$xmlData) {
+                abort(404, 'No se pudo obtener el PDF de la factura');
+            }
+
+            // Convertir base64 a archivo y descargar
+            $pdfContent = base64_decode($xmlData['base64File']);
+            $fileName = $xmlData['fileName'] ?? 'invoice.pdf';
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+
+        } catch (\Exception $e) {
+            Log::error('Exception while downloading PDF', [
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage()
+            ]);
+
+            abort(500, 'Error al descargar el PDF');
         }
     }
 

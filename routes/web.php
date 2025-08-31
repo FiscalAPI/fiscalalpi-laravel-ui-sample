@@ -26,6 +26,9 @@ Route::prefix('sales')->group(function () {
     Route::get('/', [SalesController::class, 'index'])->name('sales.index');
     Route::post('/{order}/generate-invoice', [SalesController::class, 'generateInvoice'])->name('sales.generate-invoice');
     Route::get('/invoice/{invoiceId}/pdf', [SalesController::class, 'getInvoicePdf'])->name('sales.invoice-pdf');
+    Route::get('/invoice/{invoiceId}/xml', [SalesController::class, 'getInvoiceXml'])->name('sales.invoice-xml');
+    Route::post('/invoice/{invoiceId}/send-email', [SalesController::class, 'sendInvoiceByEmail'])->name('sales.invoice-send-email');
+    Route::get('/invoice/{invoiceId}/download-pdf', [SalesController::class, 'downloadInvoicePdf'])->name('sales.invoice-download-pdf');
 });
 
 // POS Routes

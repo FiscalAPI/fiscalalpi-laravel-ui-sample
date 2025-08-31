@@ -16,8 +16,8 @@ class PosController extends Controller
      */
     public function index()
     {
-        $companies = Person::all();
-        $customers = Person::all();
+        $companies = Person::whereNotNull('fiscalapiId')->get();
+        $customers = Person::whereNotNull('fiscalapiId')->get();
 
         // Create a new order automatically when POS opens
         $order = Order::create([
@@ -79,6 +79,15 @@ class PosController extends Controller
         ]);
 
         $product = Product::findOrFail($request->productId);
+
+        // Verificar que el producto tenga ID de FiscalAPI
+        if (!$product->fiscalapiId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El producto no tiene un ID de FiscalAPI válido'
+            ], 400);
+        }
+
         $discountPercentage = $request->discountPercentage ?? 0;
         $subtotal = $request->quantity * $product->unitPrice * (1 - $discountPercentage / 100);
 
@@ -191,10 +200,30 @@ class PosController extends Controller
         $order = Order::findOrFail($request->orderId);
 
         if ($request->has('issuerId')) {
+            // Verificar que el emisor tenga ID de FiscalAPI
+            if ($request->issuerId) {
+                $issuer = Person::find($request->issuerId);
+                if (!$issuer || !$issuer->fiscalapiId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El emisor seleccionado no tiene un ID de FiscalAPI válido'
+                    ], 400);
+                }
+            }
             $order->update(['issuer_id' => $request->issuerId]);
         }
 
         if ($request->has('recipientId')) {
+            // Verificar que el receptor tenga ID de FiscalAPI
+            if ($request->recipientId) {
+                $recipient = Person::find($request->recipientId);
+                if (!$recipient || !$recipient->fiscalapiId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El receptor seleccionado no tiene un ID de FiscalAPI válido'
+                    ], 400);
+                }
+            }
             $order->update(['recipient_id' => $request->recipientId]);
         }
 
@@ -235,13 +264,47 @@ class PosController extends Controller
             'orderId' => 'required|exists:orders,id',
         ]);
 
-        $order = Order::findOrFail($request->orderId);
+        $order = Order::with(['recipient', 'issuer', 'items.product'])->findOrFail($request->orderId);
 
         if ($order->items()->count() === 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'No se puede completar una venta sin productos'
             ], 400);
+        }
+
+        // Verificar que tenga emisor y receptor
+        if (!$order->issuer || !$order->recipient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La orden debe tener un emisor y receptor asignados'
+            ], 400);
+        }
+
+        // Verificar que el emisor tenga ID de FiscalAPI
+        if (!$order->issuer->fiscalapiId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El emisor no tiene un ID de FiscalAPI válido'
+            ], 400);
+        }
+
+        // Verificar que el receptor tenga ID de FiscalAPI
+        if (!$order->recipient->fiscalapiId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El receptor no tiene un ID de FiscalAPI válido'
+            ], 400);
+        }
+
+        // Verificar que todos los productos tengan ID de FiscalAPI
+        foreach ($order->items as $item) {
+            if (!$item->product || !$item->product->fiscalapiId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El producto "' . ($item->product?->description ?? 'N/A') . '" no tiene un ID de FiscalAPI válido'
+                ], 400);
+            }
         }
 
         $order->update(['status' => 'completed']);
@@ -262,6 +325,7 @@ class PosController extends Controller
 
         $products = Product::where('description', 'like', "%{$query}%")
             ->orWhere('id', 'like', "%{$query}%")
+            ->whereNotNull('fiscalapiId') // Solo productos con ID de FiscalAPI
             ->limit(10)
             ->get();
 

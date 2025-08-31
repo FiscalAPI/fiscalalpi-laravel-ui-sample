@@ -15,15 +15,31 @@ use App\Http\Controllers\SalesController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Test route to verify API is working
+Route::get('/test', function () {
+    return response()->json(['message' => 'API is working']);
 });
 
-// Sales API Routes
+// Test route for orders
+Route::get('/orders/test', function () {
+    return response()->json(['message' => 'Orders API is working']);
+});
+
+// Sales API Routes - No authentication required for now
 Route::prefix('orders')->group(function () {
-    Route::post('/{order}/generate-invoice', [SalesController::class, 'generateInvoice']);
+    Route::post('/{id}/generate-invoice', [SalesController::class, 'generateInvoice']);
 });
 
 Route::prefix('invoices')->group(function () {
     Route::get('/{invoiceId}/pdf', [SalesController::class, 'getInvoicePdf']);
+    Route::get('/{invoiceId}/xml', [SalesController::class, 'getInvoiceXml']);
+    Route::post('/{invoiceId}/send-email', [SalesController::class, 'sendInvoiceByEmail']);
+    Route::get('/{invoiceId}/download-pdf', [SalesController::class, 'downloadInvoicePdf']);
+});
+
+// Keep the auth route but make it optional
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });

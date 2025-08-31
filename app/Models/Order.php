@@ -89,4 +89,28 @@ class Order extends Model
             'due' => $due,
         ]);
     }
+
+    /**
+     * Check if order can be invoiced
+     */
+    public function canBeInvoiced(): bool
+    {
+        return $this->status === 'completed'
+            && !$this->invoice_id
+            && $this->items->isNotEmpty()
+            && $this->issuer
+            && $this->recipient
+            && $this->issuer->fiscalapiId
+            && $this->recipient->fiscalapiId;
+    }
+
+    /**
+     * Check if all products have FiscalAPI IDs
+     */
+    public function allProductsHaveFiscalApiId(): bool
+    {
+        return $this->items->every(function ($item) {
+            return $item->product && $item->product->fiscalapiId;
+        });
+    }
 }
