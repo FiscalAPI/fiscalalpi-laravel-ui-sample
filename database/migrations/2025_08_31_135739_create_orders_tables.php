@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('issuer_id')->nullable()->constrained('people')->onDelete('cascade');
             $table->foreignId('recipient_id')->nullable()->constrained('people')->onDelete('cascade');
-            $table->enum('status', ['draft', 'completed', 'cancelled'])->default('draft');
+            $table->enum('status', ['draft', 'completed', 'invoiced', 'cancelled'])->default('draft');
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discounts', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
