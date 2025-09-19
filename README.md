@@ -289,13 +289,6 @@ php artisan backup:run
 
 ---
 
-## 📚 **Documentación Adicional**
-
-- [**FISCALAPI_INTEGRATION.md**](FISCALAPI_INTEGRATION.md) - Documentación completa de la integración
-- [**FISCALAPI_SETUP.md**](FISCALAPI_SETUP.md) - Guía de configuración
-- [**LAYOUT_REFACTORING.md**](LAYOUT_REFACTORING.md) - Refactorización del layout
-
----
 
 ## 🆘 **Soporte**
 
@@ -324,25 +317,6 @@ Para soporte técnico o preguntas:
 
 ---
 
-## 📈 **Roadmap**
-
-### **Versión 2.1 (Próxima)**
-- [ ] Cache de respuestas para mejorar performance
-- [ ] Validación en tiempo real de datos
-- [ ] Sistema de reintentos para fallos de API
-
-### **Versión 2.2**
-- [ ] Notificaciones push
-- [ ] Dashboard de métricas
-- [ ] Exportación masiva de facturas
-
-### **Versión 3.0**
-- [ ] Integración con sistemas de contabilidad
-- [ ] Plantillas personalizables
-- [ ] Sistema de aprobaciones
-
----
-
 ## 📄 **Licencia**
 
 Este proyecto está bajo la licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
@@ -359,7 +333,3 @@ Las contribuciones son bienvenidas. Por favor:
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
----
-
-*Última actualización: Diciembre 2024*
-*Versión: 2.0 - Integración Completa con FiscalAPI*
